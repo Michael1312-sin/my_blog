@@ -1,0 +1,297 @@
+const app = document.getElementById("app");
+document.getElementById("year").textContent = new Date().getFullYear();
+document.getElementById("brand").textContent = SITE.name;
+
+const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmt = d => new Date(d + "T00:00").toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+
+function render(text) {
+  return text.trim().split(/\n\s*\n/).map(block => {
+    block = block.trim();
+    if (block.startsWith("## ")) return `<h2>${esc(block.slice(3))}</h2>`;
+    if (block.startsWith("> ")) return `<blockquote>${esc(block.slice(2))}</blockquote>`;
+    return `<p>${esc(block).replace(/\n/g, "<br>")}</p>`;
+  }).join("");
+}
+
+const stageTag = s => `<span class="stage" title="${STAGES[s].label}">${STAGES[s].icon} ${STAGES[s].label}</span>`;
+
+function postList(posts) {
+  return posts.map(p => `
+    <a class="note" href="#/post/${p.slug}">
+      <span class="note-title">${esc(p.title)}</span>
+      <span class="note-sum">${esc(p.summary || "")}</span>
+      <span class="meta">${SECTIONS[p.section].label} · ${stageTag(p.stage)} · ${fmt(p.date)}</span>
+    </a>`).join("");
+}
+
+function home() {
+  document.title = SITE.name;
+  const sections = Object.entries(SECTIONS).map(([k, s]) => `
+    <a class="plot plot-${k}" href="#/s/${k}">
+      <strong>${s.label}</strong><span>${s.blurb}</span>
+    </a>`).join("");
+  app.innerHTML = `
+    <section class="hero">
+      <h1>${esc(SITE.tagline)}</h1>
+      <p>${esc(SITE.intro)}</p>
+    </section>
+    <h3 class="label">Wander</h3>
+    <div class="plots">${sections}</div>
+    <h3 class="label">Recently tended</h3>
+    <div class="notes">${postList(POSTS.slice(0, 5))}</div>
+    <p class="more"><a href="#/all">All notes →</a> · <a href="#/now">What I'm up to now →</a></p>`;
+}
+
+function section(key) {
+  const s = SECTIONS[key];
+  if (!s) return notFound();
+  document.title = `${s.label} · ${SITE.name}`;
+  const list = POSTS.filter(p => p.section === key);
+  app.innerHTML = `<h1>${s.label}</h1><p class="lede">${s.blurb}</p>
+    <div class="notes">${list.length ? postList(list) : "<p>Nothing planted here yet.</p>"}</div>
+    <a class="back" href="#/">← Back</a>`;
+}
+
+function all() {
+  document.title = `All notes · ${SITE.name}`;
+  app.innerHTML = `<h1>All notes</h1><div class="notes">${postList(POSTS)}</div><a class="back" href="#/">← Back</a>`;
+}
+
+function post(slug) {
+  const p = POSTS.find(x => x.slug === slug);
+  if (!p) return notFound();
+  document.title = `${p.title} · ${SITE.name}`;
+  app.innerHTML = `<article>
+    <div class="meta"><a href="#/s/${p.section}">${SECTIONS[p.section].label}</a> · ${stageTag(p.stage)} · ${fmt(p.date)}</div>
+    <h1>${esc(p.title)}</h1>
+    ${render(p.body)}
+  </article><a class="back" href="#/">← Back</a>`;
+}
+
+function now() {
+  document.title = `Now · ${SITE.name}`;
+  app.innerHTML = `<h1>Now</h1><p class="lede">What I'm focused on lately. Updated ${fmt(NOW.updated)}.</p>
+    <ul class="now">${NOW.items.map(i => `<li>${esc(i)}</li>`).join("")}</ul><a class="back" href="#/">← Back</a>`;
+}
+
+function about() {
+  document.title = `About · ${SITE.name}`;
+  app.innerHTML = `<article><h1>About</h1>${render(ABOUT)}
+    <p><a href="mailto:${esc(SITE.email)}">${esc(SITE.email)}</a></p></article><a class="back" href="#/">← Back</a>`;
+}
+
+function notFound() {
+  app.innerHTML = `<p>Nothing grows here. <a href="#/">Back home</a></p>`;
+}
+
+function route() {
+  const [, page, arg] = location.hash.split("/");
+  if (page === "post") post(arg);
+  else if (page === "s") section(arg);
+  else if (page === "all") all();
+  else if (page === "now") now();
+  else if (page === "about") about();
+  else home();
+  window.scrollTo(0, 0);
+}
+
+window.addEventListener("hashchange", route);
+route();
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Digital garden</title>
+  <meta name="description" content="A quiet corner for hobbies, ideas and growth.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" id="brand" href="#/"></a>
+    <nav>
+      <a href="#/all">Notes</a>
+      <a href="#/now">Now</a>
+      <a href="#/about">About</a>
+    </nav>
+  </header>
+
+  <main id="app"></main>
+
+  <footer class="site-footer">
+    <span id="year"></span> · Grown slowly, no algorithm
+  </footer>
+
+  <script src="posts.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+
+// ───────────────────────────────────────────────────────────────
+// YOUR CONTENT LIVES HERE. Edit freely — nothing else needs to change.
+//
+// To add a post: copy a block, paste it at the TOP of POSTS, and edit.
+//   section: "hobbies" | "ideas" | "personal" | "professional"
+//   stage:   "seedling" (rough thought) | "growing" (taking shape) | "evergreen" (settled)
+// In the body: blank line = new paragraph, "## " = heading, "> " = quote.
+// ───────────────────────────────────────────────────────────────
+
+const SITE = {
+  name: "Your Name",
+  tagline: "A quiet corner for what I'm making, learning and thinking about.",
+  intro: "No feed, no likes, no followers. Just notes I'm growing slowly, in my own time. Read what you like, leave when you like.",
+  email: "your-email@example.com"
+};
+
+const SECTIONS = {
+  hobbies:      { label: "Hobbies",      blurb: "Things I do because I enjoy them." },
+  ideas:        { label: "Ideas",        blurb: "Half-formed thoughts worth keeping." },
+  personal:     { label: "Personal growth",     blurb: "Habits, mindset, getting to know myself." },
+  professional: { label: "Professional growth", blurb: "Skills, work and where I'm heading." }
+};
+
+const STAGES = {
+  seedling:  { icon: "🌱", label: "Seedling" },
+  growing:   { icon: "🌿", label: "Growing" },
+  evergreen: { icon: "🌲", label: "Evergreen" }
+};
+
+// What you're up to lately. Update whenever you like.
+const NOW = {
+  updated: "2026-10-15",
+  items: [
+    "Setting up this little website.",
+    "Figuring out which hobbies I want to make time for.",
+    "Learning to write down thoughts instead of carrying them around."
+  ]
+};
+
+const POSTS = [
+  {
+    slug: "why-i-started-writing",
+    title: "Why I started this space",
+    date: "2026-10-15",
+    section: "personal",
+    stage: "growing",
+    summary: "Social media felt like too much. This is the opposite.",
+    body: `
+Most social platforms ask me to perform. I wanted somewhere I could simply think out loud.
+
+## What this place is
+
+> A notebook that happens to be open to visitors.
+
+I'll write about my hobbies, my ideas, and how I'm trying to grow, personally and professionally. Some posts will be rough. That's why they're marked as seedlings.
+
+Thanks for stopping by.
+`
+  },
+  {
+    slug: "a-hobby-note",
+    title: "A hobby I want to make time for",
+    date: "2026-10-12",
+    section: "hobbies",
+    stage: "seedling",
+    summary: "Replace this with something you love doing.",
+    body: `
+Replace this with a note about a hobby: what it is, why you enjoy it, what you're trying next.
+
+Photos and progress logs work well here.
+`
+  },
+  {
+    slug: "an-idea",
+    title: "An idea I keep coming back to",
+    date: "2026-10-10",
+    section: "ideas",
+    stage: "seedling",
+    summary: "Replace this with one of your own ideas.",
+    body: `
+Write the idea in a few honest paragraphs. You don't need to have it figured out.
+`
+  },
+  {
+    slug: "skills-im-building",
+    title: "Skills I'm building this year",
+    date: "2026-10-08",
+    section: "professional",
+    stage: "growing",
+    summary: "A running list of what I'm learning at work.",
+    body: `
+List what you're learning, what's hard, and what you want to be able to do by next year.
+`
+  }
+];
+
+const ABOUT = `
+Write a few sentences about who you are, what you do for work, and what you like to spend time on.
+
+You can reach me at the email below. I read everything, though I might reply slowly.
+`;
+
+:root {
+  --bg: #f4efe6;
+  --card: #fbf8f2;
+  --text: #2b2a26;
+  --muted: #7a766a;
+  --accent: #4d7c5b;
+  --line: #ddd5c5;
+  --hobbies: #e9d8b4;
+  --ideas: #d9dff0;
+  --personal: #e8d0d0;
+  --professional: #cfe0d2;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1c19; --card: #222520; --text: #e8e5da; --muted: #96927f; --accent: #8fbf9d; --line: #33362f;
+    --hobbies: #3b3626; --ideas: #2a3040; --personal: #3d2d2d; --professional: #2a3b2e;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 18px/1.75 Georgia, "Iowan Old Style", serif;
+}
+a { color: var(--accent); }
+.site-header, main, .site-footer { max-width: 720px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
+.site-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding-top: 28px; padding-bottom: 12px; font-family: system-ui, sans-serif;
+}
+.brand { font: italic 700 1.25rem Georgia, serif; color: var(--text); text-decoration: none; }
+nav a { margin-left: 18px; color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+nav a:hover { color: var(--accent); }
+main { padding-top: 32px; padding-bottom: 64px; min-height: 65vh; }
+
+.hero h1 { font-size: clamp(1.7rem, 5vw, 2.3rem); line-height: 1.25; font-weight: 400; margin: 0 0 12px; }
+.hero p, .lede { color: var(--muted); margin-top: 0; }
+.label { font: 600 0.75rem system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 40px 0 12px; }
+
+.plots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.plot { display: flex; flex-direction: column; gap: 4px; padding: 18px; border-radius: 18px 6px 18px 6px; text-decoration: none; color: var(--text); transition: transform .2s; }
+.plot span { font: 0.85rem/1.4 system-ui, sans-serif; color: var(--muted); }
+.plot:hover { transform: translateY(-3px) rotate(-.4deg); }
+.plot-hobbies { background: var(--hobbies); }
+.plot-ideas { background: var(--ideas); border-radius: 6px 18px 6px 18px; }
+.plot-personal { background: var(--personal); border-radius: 6px 18px 6px 18px; }
+.plot-professional { background: var(--professional); }
+
+.notes { display: flex; flex-direction: column; gap: 10px; }
+.note { display: block; padding: 16px 18px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; text-decoration: none; color: var(--text); }
+.note:hover { border-color: var(--accent); }
+.note-title { display: block; font-size: 1.15rem; font-weight: 700; }
+.note-sum { display: block; color: var(--muted); font-size: .95rem; line-height: 1.5; margin: 2px 0 6px; }
+.meta { font: 0.8rem system-ui, sans-serif; color: var(--muted); }
+.meta a { color: var(--muted); }
+.more, .back { font: 0.9rem system-ui, sans-serif; display: block; margin-top: 28px; }
+
+h1 { font-size: 2rem; line-height: 1.25; margin: 6px 0 12px; }
+article p { margin: 1.1em 0; }
+article h2 { margin-top: 1.8em; }
+blockquote { margin: 1.4em 0; padding-left: 16px; border-left: 3px solid var(--accent); color: var(--muted); font-style: italic; }
+.now li { margin-bottom: 8px; }
+
+.site-footer { padding-top: 20px; padding-bottom: 40px; color: var(--muted); font: 0.8rem system-ui, sans-serif; }
+@media (max-width: 480px) { .plots { grid-template-columns: 1fr; } }
