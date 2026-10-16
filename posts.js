@@ -8,10 +8,10 @@
 // ───────────────────────────────────────────────────────────────
 
 const SITE = {
-  name: "Your Name",
+  name: "Meet Singh",
   tagline: "A quiet corner for what I'm making, learning and thinking about.",
   intro: "No feed, no likes, no followers. Just notes I'm growing slowly, in my own time. Read what you like, leave when you like.",
-  email: "your-email@example.com"
+  email: "" // add an address here if you want a contact link on the About page
 };
 
 const SECTIONS = {
@@ -29,11 +29,11 @@ const STAGES = {
 
 // What you're up to lately. Update whenever you like.
 const NOW = {
-  updated: "2026-10-15",
+  updated: "2026-10-16",
   items: [
-    "Setting up this little website.",
-    "Figuring out which hobbies I want to make time for.",
-    "Learning to write down thoughts instead of carrying them around."
+    "Noticing how quickly AI, and the world around it, is changing everything.",
+    "Building this little website, something I never thought I'd do.",
+    "Getting to know myself better by trying things out."
   ]
 };
 
@@ -95,7 +95,9 @@ List what you're learning, what's hard, and what you want to be able to do by ne
 ];
 
 const ABOUT = `
-Write a few sentences about who you are, what you do for work, and what you like to spend time on.
+I'm a curious soul, and I haven't figured out my life yet, including what I really want from it. That's okay.
 
-You can reach me at the email below. I read everything, though I might reply slowly.
+This page is how I get to know myself better, by trying things and experimenting. Building a page of my own is something I never thought I'd do, but I was able to, so why not?
+
+Let's explore life from my end.
 `;

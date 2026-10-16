@@ -78,7 +78,7 @@ function now() {
 function about() {
   document.title = `About · ${SITE.name}`;
   app.innerHTML = `<article><h1>About</h1>${render(ABOUT)}
-    <p><a href="mailto:${esc(SITE.email)}">${esc(SITE.email)}</a></p></article><a class="back" href="#/">← Back</a>`;
+    ${SITE.email ? `<p><a href="mailto:${esc(SITE.email)}">${esc(SITE.email)}</a></p>` : ""}</article><a class="back" href="#/">← Back</a>`;
 }
 
 function notFound() {
